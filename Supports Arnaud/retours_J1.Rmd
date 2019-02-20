@@ -1,0 +1,184 @@
+---
+title: "Retour sur qques interrogations J1"
+author: "Arnaud MILET"
+date: "18 février 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# J1  
+
+## Appel d'un objet créé dans un précédent chunk
+
+```{r chunk1}
+x<-1
+```
+
+
+```{r chunk2}
+x+1
+```
+
+
+## Fonctions internes
+
+On les place où l'on souhaite. Tant qu'elles ne sont pas exportées, pas besoin de les commenter en roxygen2. OOOUF!!!!
+
+## Templates cheatsheets
+
+Ils sont disponibles sur le site RStudio:
+https://www.rstudio.com/resources/cheatsheets/how-to-contribute-a-cheatsheet/
+
+On ne les génere pas avec knitr.
+
+## Petite info utile pour la suite:
+
+On peut modifier le working directory d'un rmarkdown pour le positionner dans un répertoire de données:
+
+```{r eval= FALSE}
+WD <- system.file("extdata", package = "monpackage")
+knitr::opts_knit$set(root.dir = WD)
+
+
+```
+
+## Rappel sur les étapes clés de la création d'un package
+
+
+*  Etape 1: file > new project > project package devtools  
+
+*  Etape 2: Modification du fichier DESCRIPTION  
+
+*  Etape 3: Check: si ça marche pas probleme de structure  
+
+*  Etape 4: Premiere fonction:  
+    +  Redige la fonction en scrip r   
+    +  Insert du skeleton roxygen2  
+    +  on renseigne les champs  
+        *  @title  
+        *  @description  
+        *  @name
+        *  @param
+        *  @inheritParams  
+        *  @import/ @importFrom
+        *  @examples
+        *  @return
+        *  @note si warning à donner à l'utilisateur
+        *  @export
+    
+    +  On enregistre dans un fichier nom.R dans le repertoire R
+  
+*  Etape 5: On lance devtools::document() qui va mettre à jour NAMESPACES et générer tous les .Rd correspondant à l'aide sur les fonctions.
+
+*  Etape 6: Si on a importé des librairies, on execute
+devtools::use_package("lepackage_importé")
+
+*  Etape 7: On execute devtools::check()
+
+*  Etape 8: On créé les fichiers sources, on installe et relance. Le package est créé.
+    
+    
+# J2
+
+## Faire un lien vers une vignette  
+
+Un utilisateur peut appeler une vignette depuis la console par la fonction vignette:  
+```r
+vignette(topic = "cartography", package = "cartography")
+
+```
+
+## A l'appel de la vignette après un build et reload, rien ne se passe  
+
+Tout fonctionne de manière interactive, mais la vignette ne s'affiche pas après l'installation du package. Un des cas suivants peut avoir eu lieu. Tout d’abord, étant donné que «build and reload» de RStudio ne construit pas de vignettes, vous devrez peut-être exécuter devtools :: install () à la place.
+
+
+## Fonctions internes
+
+On peut utiliser roxygen2 si on souhaite sans pour autant exporter la fonction. Il suffit d'utiliser  **@keyword internal**, exemple:  
+
+```r
+
+# multiplyBy3
+#' This is an example of an internal function called \code{multiplyBy3()}
+#'
+#' Sometimes you want internal functions as part of an R Package built with 
+#' RStudio and roxygen2, but you don't want .Rd files created for them
+#' or to have them be visible in the help document following the build process
+#' 
+#' @keywords internal
+#'
+#' @param base_num The number to multiply by three 
+#'
+#' @import jsonlite
+#'
+#' @return Returns a numeric vector
+#'
+multiplyBy3 <- function(base_number) {
+  stopifnot(is.numeric(base_number))
+  return(base_number * 3)
+}
+```
+
+
+## Appeler une librairie pour une fonction interne  
+
+Il ne faut pas utiliser library() ou require()  (sauf dans le cadre de test), on utilise plutôt loadNamespace("nom du package"). En parallèle, il ne faut pas oublier de suggérer à l'utilisateur d'installer ce package avec : devtools::use_package("nom du package", type = "Suggests").
+
+
+## Existe-t'il des skeletons pour les données    
+
+**A priori pas encore...**  
+https://github.com/r-lib/usethis/issues/274  
+
+**...En revanche, vous pouvez utiliser devtools::use_package_doc() pour générer un template roxygen pour documenter le package**    
+
+## Retour sur l'erreur rencontrée: "no visible binding for global variable"
+
+
+Vous pouvez résoudre la note `no visible binding for global variable` en utilisant explicitement `.data` dans votre expression (par exemple, `df %>% filter(.data$a > 5)`) et en important `rlang::.data` dans votre namespace (par exemple, `@importFrom rlang .data`). Expliqué dans cet article:   https://dplyr.tidyverse.org/articles/programming.html
+
+
+
+Trouver une solution pour tidyr  
+`Undefined global functions or variables` 
+
+## La 3eme voie... github en dernier, les ajustements
+
+`usethis::use_github()` ne marchera probablement pas dès le départ et quelques configuration seront nécéssaires après avoir initialisé git:
+
+```r
+cred <- git2r::cred_ssh_key(publickey = "~/../.ssh/id_rsa.pub", privatekey = "~/../.ssh/id_rsa")
+
+usethis::use_github(credentials = cred)
+```
+
+
+## roxygen2 template
+
+Using Templates with Roxygen2
+
+1) You should create a folder to hold your templates: man-roxygen/
+
+2) Each template is a .R file that lives in man-roxygen/
+
+For example: man-roxygen/someTemplate.R
+
+ #' ... [other roxygen2 tags and information] ...
+ #'
+ #' @param someParm A parameter that is used in several functions.
+ #'
+ #' ... [more roxygen2 tags and information] ...
+
+3) Now in some other roxygen2 block you can call all of that roxygen2 code this way.
+
+ #' ... [other roxygen2 tags and information] ...
+ #'
+ #' @template someTemplate
+
+4) When you use the template you get everything in the someTemplate.R file.
+
+Check out the plyr package on GitHub to see the clever way Hadley uses several template files stored in man-roxygen\ that he can mix and match to create the documentation.
