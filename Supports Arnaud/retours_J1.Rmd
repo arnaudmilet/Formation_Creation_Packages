@@ -159,6 +159,9 @@ usethis::use_github(credentials = cred)
 
 ## roxygen2 template
 
+a traduire:  
+
+
 Using Templates with Roxygen2
 
 1) You should create a folder to hold your templates: man-roxygen/
